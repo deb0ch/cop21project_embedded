@@ -54,7 +54,7 @@ bool Akeru_::isReady() {
 
   unsigned long currentTime = millis();
 
-  if (currentTime >= _lastSend && (currentTime - _lastSend) <= 600000)
+  if (currentTime >= _lastSend && (currentTime - _lastSend) <= 18000)
     return false;
 
   // Time is ok, ask the modem's status

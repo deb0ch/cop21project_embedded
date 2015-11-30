@@ -1,6 +1,6 @@
 
 BOARD_TAG    = uno
-ARDUINO_LIBS = SoftwareSerial Akeru
+ARDUINO_LIBS = SoftwareSerial Akeru TinyGPS
 ARDUINO_PORT = /dev/ttyUSB0
 MONITOR_PORT = /dev/ttyUSB0
 
