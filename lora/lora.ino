@@ -1,18 +1,19 @@
+
 #include <SoftwareSerial.h>
-#include <Akeru.h>
 #include <TinyGPS.h>
 
+#define LORA_BAUDRATE 9600
 #define SERIAL_BAUD 9600
-#define SIGFOX_LED_PIN 13
-#define SIGFOX_POWER 3
+#define LED_PIN 13
 
-#define BOOT_DELAY 500 // ms before initializing modem
-#define LOOP_DELAY 18000 // milliseconds between each loop
+#define BOOT_DELAY 500
+#define LOOP_DELAY 18000	// milliseconds
 
-/* GPS pins */ 
+/* GPS pins */
 #define RX_PIN 2
-#define TX_PIN 3 
+#define TX_PIN 3
 
+SoftwareSerial lora(10, 11);
 SoftwareSerial SoftSerial(RX_PIN, TX_PIN);
 TinyGPS gps;
 
@@ -25,11 +26,12 @@ const int   gas_pin = A0;
 #define PM_PIN 9
 unsigned long sample_time = 30000;
 
-typedef struct  s_data{
-    int     gas; //2bytes
-    int     pm; //2bytes
-    long    lat; //4bytes
-    long    lon; //4bytes
+typedef struct  s_data
+{
+    int     gas;	// 2bytes
+    int     pm;		// 2bytes
+    long    lat;	// 4bytes
+    long    lon;	// 4bytes
 }               t_data;
 
 t_data          g_data;
@@ -42,22 +44,16 @@ boolean ft_getPM(void);
 void    setup(void)
 {
     Serial.begin(SERIAL_BAUD);
-    pinMode(SIGFOX_LED_PIN, OUTPUT);
-    digitalWrite(SIGFOX_LED_PIN, LOW);
-
-    delay(BOOT_DELAY);  // let the akeru board wake up gently
-
-    Akeru.begin();
-    Akeru.setPower(SIGFOX_POWER);
+    pinMode(LED_PIN, OUTPUT);
+    digitalWrite(LED_PIN, LOW);
+    lora.begin(LORA_BAUDRATE);
     SoftSerial.begin(SERIAL_BAUD);
-
     pinMode(PM_PIN, INPUT);
-    
-    for(int i = 0; i < 3; ++i)
+    for (int i = 0; i < 3; ++i)
     {
-        digitalWrite(SIGFOX_LED_PIN, HIGH);
+        digitalWrite(LED_PIN, HIGH);
         delay(500);
-        digitalWrite(SIGFOX_LED_PIN, LOW);
+        digitalWrite(LED_PIN, LOW);
         delay(500);
     }
 }
@@ -75,17 +71,7 @@ void    loop(void)
 
 boolean ft_sendMessage(void)
 {
-    Akeru.begin();
-    delay(500);
-    if (!Akeru.isReady())
-        return(false);
-    digitalWrite(SIGFOX_LED_PIN, HIGH);
-    if (!Akeru.send(&g_data, sizeof(g_data)))
-    {
-        digitalWrite(SIGFOX_LED_PIN, LOW);
-        return(false);
-    }
-    digitalWrite(SIGFOX_LED_PIN, LOW);
+  lora.write((uint8_t*)&g_data, sizeof(g_data));
     return(true);
 }
 
@@ -94,7 +80,7 @@ boolean ft_getGPS(void)
     unsigned long   fix_age;
 
     SoftSerial.listen();
-    while(SoftSerial.available())
+    while (SoftSerial.available())
     {
         gps.encode(SoftSerial.read());
     }
@@ -102,13 +88,13 @@ boolean ft_getGPS(void)
     if (fix_age == TinyGPS::GPS_INVALID_AGE || fix_age > 5000)
     {
         Serial.println("no fix or no valid data");
-        return(false);
+        return (false);
     }
     else
     {
         Serial.println("valid data obtained");
     }
-    return(true);
+    return (true);
 }
 
 boolean ft_getGas(void)
@@ -123,15 +109,15 @@ boolean ft_getGas(void)
     while (i < NUM_READS)
     {
         sensor_value = analogRead(gas_pin);
-        i++;
         delay(500);
+        i++;
     }
     sensor_value = analogRead(gas_pin);
     sensor_volt = (float)sensor_value / (1024 * 5.0);
     Rs_gas = (5.0 - sensor_volt) / sensor_volt;
     ratio = (Rs_gas / GAS_CONST) * 100;
     g_data.gas = (int)ratio;
-    return(true);
+    return (true);
 }
 
 boolean ft_getPM(void)
